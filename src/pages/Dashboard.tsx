@@ -270,42 +270,42 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link
           to="/customers/new"
-          className="bg-white rounded-2xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
+          className="bg-white rounded-xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
         >
-          <div className="bg-black p-3 rounded-xl inline-flex mb-3 group-hover:bg-gray-800 transition-colors">
-            <Plus className="w-6 h-6 text-white" />
+          <div className="bg-black p-5 rounded-2xl inline-flex mb-1 group-hover:bg-gray-800 transition-colors">
+            <Plus className="w-3 h-3 text-white" />
           </div>
           <p className="font-medium text-black text-xs md:text-sm">Add Customer</p>
         </Link>
         
         <Link
           to="/bills/new"
-          className="bg-white rounded-2xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
+          className="bg-white rounded-xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
         >
-          <div className="bg-black p-3 rounded-xl inline-flex mb-3 group-hover:bg-gray-800 transition-colors">
-            <Plus className="w-6 h-6 text-white" />
+          <div className="bg-black p-5 rounded-2xl inline-flex mb-1 group-hover:bg-gray-800 transition-colors">
+            <Plus className="w-3 h-3 text-white" />
           </div>
-          <p className="font-medium text-black text-xs md:text-sm">Create Bill</p>
+            <p className="font-medium text-black text-xs md:text-sm px-2 py-1">Create Bill</p>
         </Link>
         
         <Link
           to="/inventory"
-          className="bg-white rounded-2xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
+          className="bg-white rounded-xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
         >
-          <div className="bg-black p-3 rounded-xl inline-flex mb-3 group-hover:bg-gray-800 transition-colors">
-            <Plus className="w-6 h-6 text-white" />
+          <div className="bg-black p-5 rounded-2xl inline-flex mb-1 group-hover:bg-gray-800 transition-colors">
+            <Plus className="w-3 h-3 text-white" />
           </div>
-          <p className="font-medium text-black text-xs md:text-sm">Add Item</p>
+          <p className="font-medium text-black text-xs md:text-sm px-2 py-1">Add items</p>
         </Link>
         
         <Link
           to="/orders"
-          className="bg-white rounded-2xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
+          className="bg-white rounded-xl p-4 md:p-6 card-shadow hover:card-shadow-lg transition-all duration-200 text-center group touch-target"
         >
-          <div className="bg-black p-3 rounded-xl inline-flex mb-3 group-hover:bg-gray-800 transition-colors">
-            <Eye className="w-6 h-6 text-white" />
+          <div className="bg-black p-5 rounded-2xl inline-flex mb-1 group-hover:bg-gray-800 transition-colors">
+            <Eye className="w-3 h-3 text-white" />
           </div>
-          <p className="font-medium text-black text-xs md:text-sm">View Orders</p>
+          <p className="font-medium text-black text-xs md:text-sm px-1 py-1">View orders</p>
         </Link>
       </div>
 
