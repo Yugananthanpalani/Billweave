@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Download, Printer, Save, X, MessageCircle, Share } from 'lucide-react';
+import { ArrowLeft, Download, Printer, Save, X, MessageCircle, Share, Mail } from 'lucide-react';
 import { getBill, updateBill } from '../lib/firestore';
 import { Bill } from '../types';
 import { generatePDF } from '../lib/pdfGenerator';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function BillDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { appUser, user } = useAuth();
   const [bill, setBill] = useState<Bill | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditingPayment, setIsEditingPayment] = useState(false);
   const [editPaymentStatus, setEditPaymentStatus] = useState<'paid' | 'pending' | 'partial'>('pending');
   const [editAmountPaid, setEditAmountPaid] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -39,13 +44,75 @@ export default function BillDetails() {
 
   const handleDownloadPDF = () => {
     if (bill) {
-      generatePDF(bill, 'download');
+      const shopInfo = {
+        shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+        email: user?.email || 'contact@billweave.com'
+      };
+      generatePDF(bill, shopInfo, 'download');
     }
   };
 
   const handlePrintPDF = () => {
     if (bill) {
-      generatePDF(bill, 'print');
+      const shopInfo = {
+        shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+        email: user?.email || 'contact@billweave.com'
+      };
+      generatePDF(bill, shopInfo, 'print');
+    }
+  };
+
+  const handleEmailPDF = () => {
+    if (bill) {
+      // Check if customer has email
+      const customerEmail = bill.customerName; // You might want to add customer email to bill data
+      if (customerEmail && customerEmail.includes('@')) {
+        setEmailAddress(customerEmail);
+      }
+      setShowEmailModal(true);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!bill || !emailAddress.trim()) return;
+
+    setSendingEmail(true);
+    try {
+      const shopInfo = {
+        shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+        email: user?.email || 'contact@billweave.com'
+      };
+      
+      // Generate PDF as blob
+      const doc = new jsPDF();
+      // ... (PDF generation code would go here, similar to generatePDF but returning blob)
+      
+      // For now, we'll show a success message and open email client
+      const subject = `Invoice ${bill.billNumber} from ${shopInfo.shopName}`;
+      const body = `Dear ${bill.customerName},
+
+Please find attached your invoice ${bill.billNumber} for ₹${bill.total.toFixed(2)}.
+
+Payment Status: ${bill.paymentStatus.toUpperCase()}
+Amount Paid: ₹${bill.amountPaid.toFixed(2)}
+${bill.amountDue > 0 ? `Amount Due: ₹${bill.amountDue.toFixed(2)}` : ''}
+
+Thank you for choosing ${shopInfo.shopName}!
+
+Best regards,
+${shopInfo.shopName}
+${shopInfo.email}`;
+
+      const mailtoLink = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailtoLink);
+      
+      setShowEmailModal(false);
+      alert('Email client opened. Please attach the PDF manually and send the email.');
+    } catch (error) {
+      console.error('Error preparing email:', error);
+      alert('Failed to prepare email. Please try again.');
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -66,7 +133,7 @@ export default function BillDetails() {
   };
 
   const handleSavePayment = async () => {
-    if (!bill || !id) return;
+    if (!bill || !id || !appUser?.id) return;
 
     setSaving(true);
     try {
@@ -78,7 +145,7 @@ export default function BillDetails() {
         amountDue: newAmountDue,
       };
 
-      await updateBill(id, updatedBill);
+      await updateBill(id, updatedBill, appUser.id);
       
       setBill({
         ...bill,
@@ -181,6 +248,13 @@ Thank you for choosing BillWeave Tailors!`;
             <Download className="w-5 h-5" />
           </button>
           <button
+            onClick={handleEmailPDF}
+            className="touch-target p-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+            title="Email PDF"
+          >
+            <Mail className="w-5 h-5" />
+          </button>
+          <button
             onClick={handlePrintPDF}
             className="touch-target p-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
             title="Print"
@@ -227,6 +301,13 @@ Thank you for choosing BillWeave Tailors!`;
           >
             <Download className="w-4 h-4" />
             Download PDF
+          </button>
+          <button
+            onClick={handleEmailPDF}
+            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors flex items-center gap-2 font-medium"
+          >
+            <Mail className="w-4 h-4" />
+            Email PDF
           </button>
         </div>
       </div>
@@ -431,6 +512,75 @@ Thank you for choosing BillWeave Tailors!`;
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-slide-in-up">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">Email Invoice</h2>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-xl"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  required
+                  className="input-field"
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <h3 className="font-medium text-blue-900 mb-2">Invoice Details:</h3>
+                <p className="text-sm text-blue-800">
+                  Bill Number: {bill?.billNumber}<br/>
+                  Customer: {bill?.customerName}<br/>
+                  Amount: ₹{bill?.total.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail || !emailAddress.trim()}
+                  className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      Preparing...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-5 h-5" />
+                      Send Email
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowEmailModal(false)}
+                  className="flex-1 btn-secondary"
+                  disabled={sendingEmail}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,11 +28,14 @@ import {
   deleteBill,
   deleteOrder,
   deleteCustomer,
-  deleteInventoryItem
+  deleteInventoryItem,
+  getUserByEmail
 } from '../lib/firestore';
 import { User, Customer, Bill, Order, InventoryItem, AdminStats } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminPanel() {
+  const { appUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'customers' | 'bills' | 'orders' | 'inventory'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,13 +61,14 @@ export default function AdminPanel() {
   }, []);
 
   const loadAllData = async () => {
+    if (!appUser?.id) return;
     try {
       const [usersData, customersData, billsData, ordersData, inventoryData] = await Promise.all([
         getAllUsers(),
-        getAllCustomers(),
-        getAllBills(),
-        getAllOrders(),
-        getAllInventory(),
+        getAllCustomers(appUser.id), // Admin sees all customers
+        getAllBills(appUser.id), // Admin sees all bills
+        getAllOrders(appUser.id), // Admin sees all orders
+        getAllInventory(appUser.id), // Admin sees all inventory
       ]);
 
       setUsers(usersData);
@@ -130,9 +134,10 @@ export default function AdminPanel() {
   };
 
   const handleDeleteBill = async (billId: string, billNumber: string) => {
+    if (!appUser?.id) return;
     if (window.confirm(`Are you sure you want to delete bill ${billNumber}?`)) {
       try {
-        await deleteBill(billId);
+        await deleteBill(billId, appUser.id);
         setBills(bills.filter(bill => bill.id !== billId));
         setStats(prev => ({ ...prev, totalBills: prev.totalBills - 1 }));
       } catch (error) {
@@ -143,9 +148,10 @@ export default function AdminPanel() {
   };
 
   const handleDeleteOrder = async (orderId: string, billNumber: string) => {
+    if (!appUser?.id) return;
     if (window.confirm(`Are you sure you want to delete order ${billNumber}?`)) {
       try {
-        await deleteOrder(orderId);
+        await deleteOrder(orderId, appUser.id);
         setOrders(orders.filter(order => order.id !== orderId));
         setStats(prev => ({ ...prev, totalOrders: prev.totalOrders - 1 }));
       } catch (error) {
@@ -156,9 +162,10 @@ export default function AdminPanel() {
   };
 
   const handleDeleteCustomer = async (customerId: string, customerName: string) => {
+    if (!appUser?.id) return;
     if (window.confirm(`Are you sure you want to delete customer ${customerName}?`)) {
       try {
-        await deleteCustomer(customerId);
+        await deleteCustomer(customerId, appUser.id);
         setCustomers(customers.filter(customer => customer.id !== customerId));
         setStats(prev => ({ ...prev, totalCustomers: prev.totalCustomers - 1 }));
       } catch (error) {
@@ -169,9 +176,10 @@ export default function AdminPanel() {
   };
 
   const handleDeleteInventoryItem = async (itemId: string, itemName: string) => {
+    if (!appUser?.id) return;
     if (window.confirm(`Are you sure you want to delete inventory item ${itemName}?`)) {
       try {
-        await deleteInventoryItem(itemId);
+        await deleteInventoryItem(itemId, appUser.id);
         setInventory(inventory.filter(item => item.id !== itemId));
       } catch (error) {
         console.error('Error deleting inventory item:', error);
@@ -455,6 +463,9 @@ export default function AdminPanel() {
                   <p className="text-sm text-gray-600">{customer.phone}</p>
                   {customer.email && <p className="text-sm text-gray-600">{customer.email}</p>}
                   <p className="text-xs text-gray-500 mt-1">
+                    Created by: {customer.createdBy}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
                     Added: {new Date(customer.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -498,6 +509,9 @@ export default function AdminPanel() {
                   </div>
                   <p className="text-sm text-gray-900">{bill.customerName}</p>
                   <p className="text-sm text-gray-600">₹{bill.total.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Created by: {bill.createdBy}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Created: {new Date(bill.createdAt).toLocaleDateString()}
                   </p>
@@ -543,6 +557,9 @@ export default function AdminPanel() {
                   </div>
                   <p className="text-sm text-gray-900">{order.customerName}</p>
                   <p className="text-sm text-gray-600">₹{order.total.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Created by: {order.createdBy}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Due: {new Date(order.dueDate).toLocaleDateString()}
                   </p>
@@ -590,6 +607,9 @@ export default function AdminPanel() {
                     Quantity: {item.quantity} {item.unit}
                   </p>
                   <p className="text-sm text-gray-600">Price: ₹{item.price.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Created by: {item.createdBy}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
                   <button

@@ -42,6 +42,7 @@ export default function CustomerForm() {
       navigate('/customers');
     }
   }, [appUser, navigate]);
+  
   const loadCustomer = async () => {
     if (!id) return;
     try {
@@ -80,6 +81,11 @@ export default function CustomerForm() {
       alert('Please enter phone number');
       return;
     }
+    
+    if (!appUser?.id) {
+      alert('User not authenticated');
+      return;
+    }
 
     setLoading(true);
 
@@ -93,13 +99,13 @@ export default function CustomerForm() {
       };
 
       if (isEditing && id) {
-        await updateCustomer(id, customerData);
+        await updateCustomer(id, customerData, appUser.id);
       } else {
         await addCustomer({
           ...customerData,
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
+        }, appUser.id);
       }
 
       navigate('/customers');

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Search, Calendar, Filter, ShoppingBag, MessageCircle } from 'lucide-react';
 import { getAllOrders, updateOrder } from '../lib/firestore';
 import { Order } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Orders() {
+  const { appUser, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,8 +17,9 @@ export default function Orders() {
   }, []);
 
   const loadOrders = async () => {
+    if (!appUser?.id) return;
     try {
-      const data = await getAllOrders();
+      const data = await getAllOrders(appUser.id);
       setOrders(data);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -26,8 +29,9 @@ export default function Orders() {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
+    if (!appUser?.id) return;
     try {
-      await updateOrder(orderId, { status: newStatus });
+      await updateOrder(orderId, { status: newStatus }, appUser.id);
       setOrders(
         orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
       );
@@ -41,6 +45,11 @@ export default function Orders() {
     e.preventDefault();
     e.stopPropagation();
     
+    const shopInfo = {
+      shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+      email: user?.email || 'contact@billweave.com'
+    };
+    
     const message = `Hi ${order.customerName}! 
 
 Order Update:
@@ -51,7 +60,7 @@ Order Update:
 
 ${order.notes ? `📝 Notes: ${order.notes}` : ''}
 
-Thank you for choosing BillWeave Tailors!`;
+Thank you for choosing ${shopInfo.shopName}!`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${order.customerPhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;

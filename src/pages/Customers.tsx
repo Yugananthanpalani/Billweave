@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Plus, Search, Phone, Mail, Users, Filter } from 'lucide-react';
 import { getAllCustomers } from '../lib/firestore';
 import { Customer } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Customers() {
+  const { appUser } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,8 +17,9 @@ export default function Customers() {
   }, []);
 
   const loadCustomers = async () => {
+    if (!appUser?.id) return;
     try {
-      const data = await getAllCustomers();
+      const data = await getAllCustomers(appUser.id);
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);

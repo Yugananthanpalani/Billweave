@@ -3,10 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard as Edit, Phone, Mail, MapPin, Trash2 } from 'lucide-react';
 import { getCustomer, getCustomerBills, deleteCustomer } from '../lib/firestore';
 import { Customer, Bill } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { appUser } = useAuth();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +20,11 @@ export default function CustomerDetails() {
   }, [id]);
 
   const loadCustomerData = async () => {
-    if (!id) return;
+    if (!id || !appUser?.id) return;
     try {
       const [customerData, billsData] = await Promise.all([
         getCustomer(id),
-        getCustomerBills(id),
+        getCustomerBills(id, appUser.id),
       ]);
       setCustomer(customerData);
       setBills(billsData);
@@ -34,7 +36,7 @@ export default function CustomerDetails() {
   };
 
   const handleDelete = async () => {
-    if (!id || !customer) return;
+    if (!id || !customer || !appUser?.id) return;
 
     if (
       window.confirm(
@@ -42,7 +44,7 @@ export default function CustomerDetails() {
       )
     ) {
       try {
-        await deleteCustomer(id);
+        await deleteCustomer(id, appUser.id);
         navigate('/customers');
       } catch (error) {
         console.error('Error deleting customer:', error);

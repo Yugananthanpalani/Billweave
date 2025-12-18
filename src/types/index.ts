@@ -18,6 +18,7 @@ export interface Customer {
   email?: string;
   address?: string;
   measurements: Measurements;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +46,7 @@ export interface Bill {
   amountPaid: number;
   amountDue: number;
   notes?: string;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +63,7 @@ export interface Order {
   items: BillItem[];
   total: number;
   notes?: string;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +76,7 @@ export interface InventoryItem {
   unit: string;
   price: number;
   description?: string;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,6 +91,7 @@ export interface DashboardStats {
 export interface User {
   id: string;
   email: string;
+  shopName: string;
   role: 'admin' | 'user';
   isBlocked: boolean;
   createdAt: Date;

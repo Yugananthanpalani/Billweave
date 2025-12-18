@@ -38,9 +38,11 @@ export default function BillForm() {
       navigate('/');
     }
   }, [appUser, navigate]);
+  
   const loadCustomers = async () => {
+    if (!appUser?.id) return;
     try {
-      const data = await getAllCustomers();
+      const data = await getAllCustomers(appUser.id);
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -92,6 +94,11 @@ export default function BillForm() {
       alert('Please fill in all item details');
       return;
     }
+    
+    if (!appUser?.id) {
+      alert('User not authenticated');
+      return;
+    }
 
     setLoading(true);
 
@@ -101,7 +108,7 @@ export default function BillForm() {
         throw new Error('Customer not found');
       }
 
-      const billNumber = await generateBillNumber();
+      const billNumber = await generateBillNumber(appUser.id);
 
       const billData = {
         billNumber,
@@ -121,7 +128,7 @@ export default function BillForm() {
         updatedAt: new Date(),
       };
 
-      const billId = await addBill(billData);
+      const billId = await addBill(billData, appUser.id);
 
       if (createOrder) {
         await addOrder({
@@ -137,7 +144,7 @@ export default function BillForm() {
           notes,
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
+        }, appUser.id);
       }
 
       navigate(`/bills/${billId}`);

@@ -6,7 +6,7 @@ import { Bill, Order } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, appUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [todayOrders, setTodayOrders] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
@@ -15,8 +15,9 @@ export default function Dashboard() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
+    if (!appUser?.id) return;
     try {
-      await updateOrder(orderId, { status: newStatus });
+      await updateOrder(orderId, { status: newStatus }, appUser.id);
       setRecentOrders(
         recentOrders.map((order) => 
           order.id === orderId ? { ...order, status: newStatus } : order
@@ -35,8 +36,12 @@ export default function Dashboard() {
   }, []);
 
   const loadDashboardData = async () => {
+    if (!appUser?.id) return;
     try {
-      const [bills, orders] = await Promise.all([getAllBills(), getAllOrders()]);
+      const [bills, orders] = await Promise.all([
+        getAllBills(appUser.id), 
+        getAllOrders(appUser.id)
+      ]);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);

@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, FileText, Filter, Calendar, MessageCircle } from 'lucide-react';
+import { Plus, Search, FileText, Filter, Calendar, MessageCircle, Download } from 'lucide-react';
 import { getAllBills } from '../lib/firestore';
 import { Bill } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { generatePDF, generatePDFBlob } from '../lib/pdfGenerator';
 
 export default function Bills() {
+  const { appUser, user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,8 +17,9 @@ export default function Bills() {
   }, []);
 
   const loadBills = async () => {
+    if (!appUser?.id) return;
     try {
-      const data = await getAllBills();
+      const data = await getAllBills(appUser.id);
       setBills(data);
     } catch (error) {
       console.error('Error loading bills:', error);
@@ -48,6 +52,22 @@ export default function Bills() {
     e.preventDefault();
     e.stopPropagation();
     
+    const shopInfo = {
+      shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+      email: user?.email || 'contact@billweave.com'
+    };
+    
+    // Generate PDF blob
+    const pdfBlob = generatePDFBlob(bill, shopInfo);
+    
+    // Create a temporary URL for the PDF
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    // Create a temporary download link for the PDF
+    const downloadLink = document.createElement('a');
+    downloadLink.href = pdfUrl;
+    downloadLink.download = `${bill.billNumber}.pdf`;
+    
     const message = `Hi ${bill.customerName}! 
 
 Your bill is ready:
@@ -58,11 +78,60 @@ ${bill.amountDue > 0 ? `⚠️ Amount Due: ₹${bill.amountDue.toFixed(2)}` : '�
 
 Payment Status: ${bill.paymentStatus.toUpperCase()}
 
-Thank you for choosing BillWeave Tailors!`;
+Thank you for choosing ${shopInfo.shopName}!
+
+📎 Invoice PDF is attached for your records.`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${bill.customerPhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    
+    // Check if we're on mobile or desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.share) {
+      // Use Web Share API on mobile if available
+      navigator.share({
+        title: `Invoice ${bill.billNumber}`,
+        text: message,
+        files: [new File([pdfBlob], `${bill.billNumber}.pdf`, { type: 'application/pdf' })]
+      }).catch((error) => {
+        console.log('Error sharing:', error);
+        // Fallback to WhatsApp Web
+        fallbackToWhatsAppWeb();
+      });
+    } else {
+      // Fallback for desktop or when Web Share API is not available
+      fallbackToWhatsAppWeb();
+    }
+    
+    function fallbackToWhatsAppWeb() {
+      // Download PDF first
+      downloadLink.click();
+      
+      // Then open WhatsApp with message
+      setTimeout(() => {
+        const whatsappUrl = `https://wa.me/${bill.customerPhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Show instruction to user
+        alert('PDF downloaded! Please attach it manually to your WhatsApp message.');
+      }, 500);
+    }
+    
+    // Clean up the temporary URL after a delay
+    setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 10000);
+  };
+
+  const handleDownloadPDF = (bill: Bill, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const shopInfo = {
+      shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+      email: user?.email || 'contact@billweave.com'
+    };
+    generatePDF(bill, shopInfo, 'download');
   };
 
   if (loading) {
@@ -176,6 +245,15 @@ Thank you for choosing BillWeave Tailors!`;
 
                 {/* Action Buttons */}
                 <div className="flex justify-end">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => handleDownloadPDF(bill, e)}
+                      className="touch-target p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors md:flex md:items-center md:gap-1 md:px-3 md:py-1 md:rounded-md"
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4 md:w-3 md:h-3" />
+                      <span className="hidden md:inline text-xs">PDF</span>
+                    </button>
                   <button
                     onClick={(e) => handleShareWhatsApp(bill, e)}
                     className="touch-target p-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors md:flex md:items-center md:gap-1 md:px-3 md:py-1 md:rounded-md"
@@ -184,6 +262,7 @@ Thank you for choosing BillWeave Tailors!`;
                     <MessageCircle className="w-4 h-4 md:w-3 md:h-3" />
                     <span className="hidden md:inline text-xs">WhatsApp</span>
                   </button>
+                  </div>
                 </div>
               </Link>
             ))}

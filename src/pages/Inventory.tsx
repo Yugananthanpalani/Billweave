@@ -10,12 +10,12 @@ import { InventoryItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Inventory() {
+  const { appUser } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const { appUser } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -31,8 +31,9 @@ export default function Inventory() {
   }, []);
 
   const loadInventory = async () => {
+    if (!appUser?.id) return;
     try {
-      const data = await getAllInventory();
+      const data = await getAllInventory(appUser.id);
       setItems(data);
     } catch (error) {
       console.error('Error loading inventory:', error);
@@ -90,9 +91,12 @@ export default function Inventory() {
       alert('Your account has been blocked. You cannot modify inventory.');
       return;
     }
+    
+    if (!appUser?.id) return;
+    
     try {
       if (editingItem) {
-        await updateInventoryItem(editingItem.id, formData);
+        await updateInventoryItem(editingItem.id, formData, appUser.id);
         setItems(
           items.map((item) =>
             item.id === editingItem.id ? { ...item, ...formData, updatedAt: new Date() } : item
@@ -103,12 +107,13 @@ export default function Inventory() {
           ...formData,
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
+        }, appUser.id);
         setItems([
           ...items,
           {
             id,
             ...formData,
+            createdBy: appUser.id,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -126,10 +131,12 @@ export default function Inventory() {
       alert('Your account has been blocked. You cannot delete inventory items.');
       return;
     }
+    
+    if (!appUser?.id) return;
 
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
-        await deleteInventoryItem(id);
+        await deleteInventoryItem(id, appUser.id);
         setItems(items.filter((item) => item.id !== id));
       } catch (error) {
         console.error('Error deleting item:', error);

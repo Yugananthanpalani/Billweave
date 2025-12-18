@@ -29,6 +29,26 @@ export default function Layout({ children }: LayoutProps) {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Prevent pull-to-refresh
+  useEffect(() => {
+    const preventRefresh = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+      
+      // If we're at the top and trying to scroll up, prevent it
+      if (scrollTop === 0 && e.touches[0].clientY > (touchStart || 0)) {
+        e.preventDefault();
+        return false;
+      }
+    };
+    
+    document.addEventListener('touchmove', preventRefresh, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventRefresh);
+    };
+  }, [touchStart]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -73,10 +93,25 @@ export default function Layout({ children }: LayoutProps) {
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    
+    // Prevent pull-to-refresh
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    if (scrollTop === 0) {
+      e.preventDefault();
+    }
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     setTouchEnd(e.targetTouches[0].clientX);
+    
+    // Additional prevention for pull-to-refresh
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    const currentY = e.targetTouches[0].clientY;
+    const startY = touchStart || 0;
+    
+    if (scrollTop === 0 && currentY > startY) {
+      e.preventDefault();
+    }
   };
 
   const onTouchEnd = () => {
@@ -105,7 +140,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="mobile-app-container" style={{ pointerEvents: 'auto' }}>
+    <div className="mobile-app-container prevent-refresh" style={{ pointerEvents: 'auto', overscrollBehavior: 'none' }}>
       {/* Desktop Header */}
       <nav className={`hidden md:block sticky top-0 z-50 transition-all duration-300 ${
         isScrolled ? 'glass-effect shadow-lg' : 'bg-white/80 backdrop-blur-sm border-b border-gray-200'
@@ -207,8 +242,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content with Swipe Support */}
       <main 
-        className="mobile-main-content" 
-        style={{ pointerEvents: 'auto' }}
+        className="mobile-main-content prevent-refresh" 
+        style={{ pointerEvents: 'auto', overscrollBehavior: 'none' }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -221,7 +256,7 @@ export default function Layout({ children }: LayoutProps) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden mobile-bottom-navigation" style={{ pointerEvents: 'auto' }}>
+      <nav className="md:hidden mobile-bottom-navigation prevent-refresh" style={{ pointerEvents: 'auto', overscrollBehavior: 'none' }}>
         <div className={`grid ${isAdminUser ? 'grid-cols-6' : 'grid-cols-5'} h-full`}>
           {allNavItems.map((item) => {
             const Icon = item.icon;

@@ -2,7 +2,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { User } from 'lucide-react';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, appUser } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -16,8 +16,12 @@ export default function Settings() {
               <User className="w-8 h-8 text-blue-600" />
             </div>
             <div>
+              <div className="text-sm text-gray-600">Shop Name</div>
+              <div className="font-semibold text-gray-900 mb-2">{appUser?.shopName || 'Not Set'}</div>
               <div className="text-sm text-gray-600">Email</div>
               <div className="font-semibold text-gray-900">{user?.email}</div>
+              <div className="text-sm text-gray-600 mt-2">Role</div>
+              <div className="font-semibold text-gray-900">{appUser?.role || 'User'}</div>
             </div>
           </div>
         </div>
@@ -68,6 +72,22 @@ export default function Settings() {
             <span>Dashboard with business insights</span>
           </li>
         </ul>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Firebase Configuration</h2>
+        <p className="text-sm text-gray-600 mb-2">
+          To configure Firebase for this application, update the environment variables in your{' '}
+          <code className="bg-gray-100 px-2 py-1 rounded">.env</code> file:
+        </p>
+        <div className="bg-gray-50 p-4 rounded-md text-sm font-mono text-gray-700 space-y-1">
+          <div>VITE_FIREBASE_API_KEY=your_api_key</div>
+          <div>VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain</div>
+          <div>VITE_FIREBASE_PROJECT_ID=your_project_id</div>
+          <div>VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket</div>
+          <div>VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id</div>
+          <div>VITE_FIREBASE_APP_ID=your_app_id</div>
+        </div>
       </div>
     </div>
   );
