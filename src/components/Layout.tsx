@@ -89,10 +89,14 @@ export default function Layout({ children }: LayoutProps) {
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">B</span>
-              </div>
-              <h1 className="text-2xl font-bold text-black">BillWeave</h1>
+              <img 
+              src="/icons/lo.png" 
+              alt="BillWeave Logo" 
+              className="w-10 h-10"
+              />
+              <h1 className="text-2xl font-bold text-black">
+              Bill<span className="text-teal-500">weave</span>
+              </h1>
             </div>
 
             <div className="flex items-center space-x-1">
@@ -144,15 +148,16 @@ export default function Layout({ children }: LayoutProps) {
       {/* Mobile Header */}
       <header className="md:hidden mobile-header-fixed">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">B</span>
-            </div>
+            <div className="flex items-center gap-3">
+            <img 
+              src="/icons/lo.png" 
+              alt="Logo" 
+              className="w-8 h-8 rounded-lg"
+            />
             <div>
-              <h1 className="text-lg font-bold text-black">BillWeave</h1>
-              <p className="text-xs text-gray-600">
-                {currentPage?.label || 'Dashboard'}
-              </p>
+              <h1 className="text-lg font-bold text-black">
+              Bill<span className="text-seagreen">Weave</span>
+              </h1>
             </div>
           </div>
 

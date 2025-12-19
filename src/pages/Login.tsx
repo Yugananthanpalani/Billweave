@@ -56,13 +56,14 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <img src="/icons/logo.png" alt="BillWeave" className="w-30 h-40 mx-auto mb-4" />
-        </div>
+        
 
         {/* Form */}
         <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
+          {/* Logo */}
+        <div className="text-center mb-8">
+          <img src="/icons/lo.png" alt="BillWeave" className="w-30 h-20 mx-auto mb-0" />
+        </div>
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-black mb-2">
               {isSignUp ? 'Create Account' : 'Welcome Back'}

@@ -13,8 +13,8 @@ export default function AuthRoute({ children }: AuthRouteProps) {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
-            <span className="text-white font-bold text-2xl">B</span>
-          </div>
+            <img src="/icon/lo.png" alt="Logo" className="w-16 h-16 object-contain" />
+            </div>
           <div className="text-black text-xl font-semibold">Loading...</div>
         </div>
       </div>
