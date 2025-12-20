@@ -90,7 +90,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-3">
               <img 
-              src="/icons/lo.png" 
+              src="/icons/log.png" 
               alt="BillWeave Logo" 
               className="w-10 h-10"
               />
@@ -150,13 +150,14 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
             <img 
-              src="/icons/lo.png" 
+              src="/icons/log.png" 
               alt="Logo" 
               className="w-8 h-8 rounded-lg"
             />
             <div>
-              <h1 className="text-lg font-bold text-black">
-              Bill<span className="text-seagreen">Weave</span>
+              <h1 className="text-lg font-bold">
+                <span className="text-black">Bill</span>
+                <span className="text-teal-500">Weave</span>
               </h1>
             </div>
           </div>
