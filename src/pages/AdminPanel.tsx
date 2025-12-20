@@ -116,7 +116,7 @@ export default function AdminPanel() {
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (userEmail === 'yugananthanpalani@gmail.com') {
+    if (userEmail === 'admin@billweave.com') {
       alert('Cannot delete admin user');
       return;
     }
@@ -423,7 +423,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
-                  {user.email !== 'yugananthanpalani@gmail.com' && (
+                  {user.email !== 'admin@billweave.com' && (
                     <>
                       <button
                         onClick={() => handleBlockUser(user.id, !user.isBlocked)}

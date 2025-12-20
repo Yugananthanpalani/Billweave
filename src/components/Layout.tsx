@@ -49,7 +49,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/', label: 'Home', icon: LayoutDashboard },
     { path: '/customers', label: 'Customers', icon: Users },
     { path: '/bills', label: 'Bills', icon: FileText },
     { path: '/orders', label: 'Orders', icon: ShoppingBag },
