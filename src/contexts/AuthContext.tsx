@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { createUserIfNotExists, updateUserLastLogin, getUserByEmail, isAdmin } from '../lib/firestore';
+import { updateUser } from '../lib/firestore';
 import { User as AppUser } from '../types';
 
 interface AuthContextType {
@@ -85,6 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Create user with shop name
       await createUserIfNotExists(userCredential.user.email!, shopName);
+      
+      // Reload user data to get the updated shop name
+      if (userCredential.user.email) {
+        const userData = await getUserByEmail(userCredential.user.email);
+        setAppUser(userData);
+      }
     } catch (error) {
       throw error;
     }
@@ -92,7 +99,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // For Google sign-in, we might want to prompt for shop name if it's the default
+      if (result.user?.email) {
+        const userData = await getUserByEmail(result.user.email);
+        if (userData?.shopName === 'My Tailor Shop') {
+          const shopName = prompt('Please enter your shop name:');
+          if (shopName && shopName.trim()) {
+            await updateUser(userData.id, { shopName: shopName.trim() });
+            const updatedUserData = await getUserByEmail(result.user.email);
+            setAppUser(updatedUserData);
+          }
+        }
+      }
     } catch (error) {
       throw error;
     }

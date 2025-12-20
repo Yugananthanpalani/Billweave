@@ -538,7 +538,7 @@ export const updateUserLastLogin = async (email: string) => {
 
 // Admin Functions
 export const isAdmin = (email: string): boolean => {
-  return email === 'yugananthanpalani@gmail.com';
+  return email === 'admin@billweave.com';
 };
 
 export const createUserIfNotExists = async (email: string, shopName?: string) => {

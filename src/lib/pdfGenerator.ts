@@ -1,360 +1,189 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Bill, User } from '../types';
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import { Bill } from '../types'
+import { Capacitor } from '@capacitor/core'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 
-// Generate PDF and return as blob for sharing
-export const generatePDFBlob = (
+interface ShopInfo {
+  shopName: string
+  email: string
+}
+
+/* ===== LOAD LOGO AS BASE64 ===== */
+const loadImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = src
+    img.onload = () => resolve(img)
+    img.onerror = reject
+  })
+
+export const generatePDF = async (
   bill: Bill,
-  shopInfo: { shopName: string; email: string }
-): Blob => {
-  const doc = new jsPDF();
-
-  /* ================= HEADER ================= */
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.text(shopInfo.shopName, 20, 20, { align: 'left' });
-
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.text("Professional Tailoring Services", 20, 28, { align: 'left' });
-  doc.text(`Email: ${shopInfo.email}`, 20, 34, { align: 'left' });
-  doc.setLineWidth(0.5);
-  doc.line(20, 38, 190, 38);
-
-  /* ================= INVOICE INFO ================= */
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('INVOICE', 20, 48);
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Bill Number: ${bill.billNumber}`, 20, 56);
-  doc.text(
-    `Date: ${new Date(bill.createdAt).toLocaleDateString()}`,
-    20,
-    62
-  );
-
-  /* ================= CUSTOMER ================= */
-  doc.setFont('helvetica', 'bold');
-  doc.text('Bill To:', 20, 74);
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(bill.customerName, 20, 80);
-  doc.text(`Phone: ${bill.customerPhone}`, 20, 86);
-
-  /* ================= TABLE ================= */
-  const tableData = bill.items.map((item) => [
-    item.name,
-    item.quantity.toString(),
-    `Rs. ${item.price.toFixed(2)}`,
-    `Rs. ${item.total.toFixed(2)}`,
-  ]);
-
-  autoTable(doc, {
-    startY: 96,
-    head: [['Item', 'Qty', 'Price', 'Total']],
-    body: tableData,
-    theme: 'striped',
-
-    headStyles: {
-      fillColor: [37, 99, 235],
-      textColor: 255,
-      fontStyle: 'bold',
-      fontSize: 10,
-      cellPadding: 2,
-      halign: 'center',
-    },
-
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-      valign: 'middle',
-      lineColor: [200, 200, 200],
-      lineWidth: 0.1,
-    },
-
-    columnStyles: {
-      0: { cellWidth: 80, halign: 'left', cellPadding: 3 },
-      1: { cellWidth: 25, halign: 'center', cellPadding: 3 },
-      2: { cellWidth: 35, halign: 'right', cellPadding: 3 },
-      3: { cellWidth: 35, halign: 'right', cellPadding: 3 },
-    },
-
-    margin: { left: 20, right: 20 },
-    
-    didParseCell: function(data) {
-      if (data.column.index === 0 && data.cell.text.length > 0) {
-        data.cell.styles.cellWidth = 80;
-        data.cell.styles.overflow = 'linebreak';
-      }
-    },
-    
-    didDrawCell: function(data) {
-      if (data.column.index === 0 && data.row.index > 0) {
-        data.cell.height = Math.max(data.cell.height, 12);
-      }
-    }
-  });
-
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
-
-  /* ================= TOTALS ================= */
-  const rightX = 190;
-  const labelX = rightX - 60;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-
-  doc.text('Subtotal:', labelX, finalY, { align: 'right' });
-  doc.text(`Rs. ${bill.subtotal.toFixed(2)}`, rightX, finalY, {
-    align: 'right',
-  });
-
-  doc.text(
-    `GST (${bill.taxPercentage}%):`,
-    labelX,
-    finalY + 6,
-    { align: 'right' }
-  );
-  doc.text(`${bill.tax.toFixed(2)}`, rightX, finalY + 6, {
-    align: 'right',
-  });
-
-  doc.line(labelX - 5, finalY + 9, rightX, finalY + 9);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Total:', labelX, finalY + 16, { align: 'right' });
-  doc.text(`Rs. ${bill.total.toFixed(2)}`, rightX, finalY + 16, {
-    align: 'right',
-  });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Amount Paid:', labelX, finalY + 24, {
-    align: 'right',
-  });
-  doc.text(
-    `Rs. ${bill.amountPaid.toFixed(2)}`,
-    rightX,
-    finalY + 24,
-    { align: 'right' }
-  );
-
-  /* ================= PAYMENT STATUS ================= */
-  const statusY = finalY + 40;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Payment Status:', 20, statusY);
-
-  let statusColor: [number, number, number] = [107, 114, 128];
-  if (bill.paymentStatus === 'paid') statusColor = [34, 197, 94];
-  if (bill.paymentStatus === 'pending') statusColor = [239, 68, 68];
-  if (bill.paymentStatus === 'partial') statusColor = [234, 179, 8];
-
-  doc.setTextColor(...statusColor);
-  doc.text(bill.paymentStatus.toUpperCase(), 55, statusY);
-  doc.setTextColor(0, 0, 0);
-
-  /* ================= FOOTER ================= */
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
-  doc.text(
-    `Thank you for choosing ${shopInfo.shopName}!`,
-    105,
-    280,
-    { align: 'center' }
-  );
-  doc.text(
-    `Generated by BillWeave - Professional Tailor Management System`,
-    105,
-    285,
-    { align: 'center' }
-  );
-
-  // Return PDF as blob
-  return doc.output('blob');
-};
-
-export const generatePDF = (
-  bill: Bill,
-  shopInfo: { shopName: string; email: string },
-  action: 'download' | 'print' = 'download'
+  shopInfo: ShopInfo,
+  action: 'download' | 'print' | 'share' = 'download'
 ) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF()
+  const pageHeight = doc.internal.pageSize.height
+
+  /* ================= LOGO (CENTER, TRANSPARENT) ================= */
+  try {
+    const logo = await loadImage('/icons/lo.png')
+
+    const logoWidth = 60   // small size
+    const logoHeight = 60
+    const centerX = (200 - logoWidth) / 2
+    const centerY = 150     // middle of bill
+
+    // @ts-ignore – jsPDF supports opacity
+    doc.setGState(new (doc as any).GState({ opacity: 0.5 }))
+
+    doc.addImage(
+      logo,
+      'PNG',
+      centerX,
+      centerY,
+      logoWidth,
+      logoHeight
+    )
+
+    // reset opacity
+    // @ts-ignore
+    doc.setGState(new (doc as any).GState({ opacity: 1 }))
+  } catch (e) {
+    console.warn('Logo not loaded')
+  }
 
   /* ================= HEADER ================= */
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.text(shopInfo.shopName, 20, 20, { align: 'left' });
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  doc.text(shopInfo.shopName, 105, 20, { align: 'center' })
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.text("Professional Tailoring Services", 20, 28, { align: 'left' });
-  doc.text(`Email: ${shopInfo.email}`, 20, 34, { align: 'left' });
-  doc.setLineWidth(0.5);
-  doc.line(20, 38, 190, 38);
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Email: ${shopInfo.email}`, 105, 28, { align: 'center' })
 
-  /* ================= INVOICE INFO ================= */
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('INVOICE', 20, 48);
+  doc.setLineWidth(0.5)
+  doc.line(20, 32, 190, 32)
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Bill Number: ${bill.billNumber}`, 20, 56);
-  doc.text(
-    `Date: ${new Date(bill.createdAt).toLocaleDateString()}`,
-    20,
-    62
-  );
+  /* ================= BILL INFO ================= */
+  doc.setFontSize(11)
+  doc.text(`Bill No: ${bill.billNumber}`, 20, 42)
+  doc.text(`Date: ${new Date(bill.createdAt).toLocaleDateString()}`, 20, 48)
+  doc.text(`Customer: ${bill.customerName}`, 20, 54)
+  doc.text(`Phone: ${bill.customerPhone}`, 20, 60)
 
-  /* ================= CUSTOMER ================= */
-  doc.setFont('helvetica', 'bold');
-  doc.text('Bill To:', 20, 74);
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(bill.customerName, 20, 80);
-  doc.text(`Phone: ${bill.customerPhone}`, 20, 86);
-
-  /* ================= TABLE ================= */
-  const tableData = bill.items.map((item) => [
-    item.name,
-    item.quantity.toString(),
-    `Rs. ${item.price.toFixed(2)}`,
-    `Rs. ${item.total.toFixed(2)}`,
-  ]);
-
+  /* ================= ITEMS TABLE ================= */
   autoTable(doc, {
-    startY: 96,
-    head: [['Item', 'Qty', 'Price', 'Total']],
-    body: tableData,
-    theme: 'striped',
-
-    headStyles: {
-      fillColor: [37, 99, 235],
-      textColor: 255,
-      fontStyle: 'bold',
-      fontSize: 10,
-      cellPadding: 2,
-      halign: 'center',
-    },
-
+    startY: 70,
+    head: [['Item', 'Qty', 'Price(Rs.)', 'Amount(Rs.)']],
+    body: bill.items.map(i => [
+      i.name ?? '',
+      i.quantity.toString(),
+      i.price.toFixed(2),
+      i.total.toFixed(2)
+    ]),
     styles: {
       fontSize: 9,
-      cellPadding: 2,
-      valign: 'middle',
-      lineColor: [200, 200, 200],
-      lineWidth: 0.1,
+      cellPadding: 4,
+      valign: 'middle'
     },
-
+    headStyles: {
+      fillColor: [0, 0, 0],
+      textColor: 255,
+      fontStyle: 'bold'
+    },
     columnStyles: {
-      0: { cellWidth: 80, halign: 'left', cellPadding: 3 },   // Item
-      1: { cellWidth: 25, halign: 'center', cellPadding: 3 }, // Qty
-      2: { cellWidth: 35, halign: 'right', cellPadding: 3 },  // Price
-      3: { cellWidth: 35, halign: 'right', cellPadding: 3 },  // Total
+      0: { halign: 'left', cellWidth: 58 },
+      1: { halign: 'center', cellWidth: 18 },
+      2: { halign: 'right', cellWidth: 51 },
+      3: { halign: 'right', cellWidth: 51 }
     },
-
-    margin: { left: 20, right: 20 },
-    
-    // Ensure each item appears on a separate row
-    didParseCell: function(data) {
-      // Force text wrapping for item names if they're too long
-      if (data.column.index === 0 && data.cell.text.length > 0) {
-        data.cell.styles.cellWidth = 80;
-        data.cell.styles.overflow = 'linebreak';
+    didParseCell: (data: any) => {
+      if (data.section === 'head') {
+        data.cell.styles.halign =
+          data.column.index === 0
+            ? 'left'
+            : data.column.index === 1
+            ? 'center'
+            : 'right'
       }
-    },
-    
-    // Add some spacing between rows
-    didDrawCell: function(data) {
-      if (data.column.index === 0 && data.row.index > 0) {
-        // Add a small gap between items for better readability
-        data.cell.height = Math.max(data.cell.height, 12);
+
+      if (
+        data.section === 'body' &&
+        data.column.index === 3 &&
+        data.row.index === bill.items.length - 1
+      ) {
+        data.cell.styles.fontStyle = 'bold'
       }
     }
-  });
+  })
 
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  const tableEndY = (doc as any).lastAutoTable.finalY
 
   /* ================= TOTALS ================= */
-  const rightX = 190;
-  const labelX = rightX - 60;
+  const labelX = 130
+  const amountX = 190
+  let totalsY = tableEndY + 12
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
 
-  doc.text('Subtotal:', labelX, finalY, { align: 'right' });
-  doc.text(`Rs. ${bill.subtotal.toFixed(2)}`, rightX, finalY, {
-    align: 'right',
-  });
+  doc.text('Subtotal:', labelX, totalsY)
+  doc.text(`Rs.${bill.subtotal.toFixed(2)}`, amountX, totalsY, { align: 'right' })
 
-  doc.text(
-    `GST (${bill.taxPercentage}%):`,
-    labelX,
-    finalY + 6,
-    { align: 'right' }
-  );
-  doc.text(`${bill.tax.toFixed(2)}`, rightX, finalY + 6, {
-    align: 'right',
-  });
+  totalsY += 8
+  doc.text(`GST (${bill.taxPercentage}%):`, labelX, totalsY)
+  doc.text(`${bill.tax.toFixed(2)}`, amountX, totalsY, { align: 'right' })
 
-  doc.line(labelX - 5, finalY + 9, rightX, finalY + 9);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Total:', labelX, finalY + 16, { align: 'right' });
-  doc.text(`Rs. ${bill.total.toFixed(2)}`, rightX, finalY + 16, {
-    align: 'right',
-  });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Amount Paid:', labelX, finalY + 24, {
-    align: 'right',
-  });
-  doc.text(
-    `Rs. ${bill.amountPaid.toFixed(2)}`,
-    rightX,
-    finalY + 24,
-    { align: 'right' }
-  );
-
-  /* ================= PAYMENT STATUS ================= */
-  const statusY = finalY + 40;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Payment Status:', 20, statusY);
-
-  let statusColor: [number, number, number] = [107, 114, 128];
-  if (bill.paymentStatus === 'paid') statusColor = [34, 197, 94];
-  if (bill.paymentStatus === 'pending') statusColor = [239, 68, 68];
-  if (bill.paymentStatus === 'partial') statusColor = [234, 179, 8];
-
-  doc.setTextColor(...statusColor);
-  doc.text(bill.paymentStatus.toUpperCase(), 55, statusY);
-  doc.setTextColor(0, 0, 0);
+  totalsY += 10
+  doc.setFont('helvetica', 'bold')
+  doc.text('Total:', labelX, totalsY)
+  doc.text(`Rs.${bill.total.toFixed(2)}`, amountX, totalsY, { align: 'right' })
 
   /* ================= FOOTER ================= */
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
-  doc.text(
-    `Thank you for choosing ${shopInfo.shopName}!`,
-    105,
-    280,
-    { align: 'center' }
-  );
-  doc.text(
-    `Generated by BillWeave - Professional Tailor Management System`,
-    105,
-    285,
-    { align: 'center' }
-  );
+  const footerY = pageHeight - 20
 
-  /* ================= ACTION ================= */
-  if (action === 'download') {
-    doc.save(`${bill.billNumber}.pdf`);
-  } else {
-    doc.autoPrint();
-    window.open(doc.output('bloburl'), '_blank');
+  doc.setFontSize(10)
+  doc.text('Thank You for your Business..!', 105, footerY, { align: 'center' })
+
+  doc.setFontSize(9)
+  doc.text(
+    'This bill is generated @ BillWeave',
+    105,
+    footerY + 6,
+    { align: 'center' }
+  )
+
+  /* ================= PLATFORM ================= */
+  const isAndroid = Capacitor.getPlatform() === 'android'
+
+  if (!isAndroid) {
+    if (action === 'print') {
+      doc.autoPrint()
+      window.open(doc.output('bloburl'))
+    } else {
+      doc.save(`BillWeave_${bill.billNumber}.pdf`)
+    }
+    return
   }
-};
+
+  const base64 = doc.output('datauristring').split(',')[1]
+  const fileName = `BillWeave_${bill.billNumber}.pdf`
+
+  const file = await Filesystem.writeFile({
+    path: `BillWeave/${fileName}`,
+    data: base64,
+    directory: Directory.Documents,
+    recursive: true
+  })
+
+  if (action === 'share') {
+    await Share.share({
+      title: 'BillWeave Invoice',
+      text: `Invoice ${bill.billNumber}`,
+      url: file.uri
+    })
+  }
+}
