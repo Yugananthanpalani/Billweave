@@ -21,7 +21,7 @@ export default function AuthRoute({ children }: AuthRouteProps) {
       />
     </div>
   );
-}
+  }
 
   if (user) {
     return <Navigate to="/" replace />;
