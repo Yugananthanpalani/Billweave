@@ -12,9 +12,6 @@ export default function AuthRoute({ children }: AuthRouteProps) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-            <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
-            <img src="/icon/log.png" alt="Logo" className="w-16 h-16 object-contain" />
-            </div>
           <div className="text-black text-xl font-semibold">Authenticating...</div>
         </div>
       </div>
