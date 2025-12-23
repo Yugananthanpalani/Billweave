@@ -54,7 +54,10 @@ export default function Bills() {
     
     const shopInfo = {
       shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+      name: appUser?.name || 'Owner',
+      phone: appUser?.phone || 'N/A',
       email: user?.email || 'contact@billweave.com'
+
     };
     
     // Generate PDF blob
@@ -129,6 +132,8 @@ Thank you for choosing ${shopInfo.shopName}!
     
     const shopInfo = {
       shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+      name: appUser?.name || 'Owner',
+      phone: appUser?.phone || 'N/A',
       email: user?.email || 'contact@billweave.com'
     };
     generatePDF(bill, shopInfo, 'download');

@@ -1,45 +1,84 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+let deferredPrompt: any = null
+
 export default function Login() {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
-  
+  const isAndroid = /Android/i.test(navigator.userAgent)
   const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [shopName, setShopName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showInstall, setShowInstall] = useState(false)
+
+  useEffect(() => {
+  const handler = (e: any) => {
+    e.preventDefault()
+    deferredPrompt = e
+    setShowInstall(true)
+  }
+
+  window.addEventListener('beforeinstallprompt', handler)
+
+  return () => {
+    window.removeEventListener('beforeinstallprompt', handler)
+  }
+}, [])
+
+const handleInstall = async () => {
+  if (!deferredPrompt) return
+
+  deferredPrompt.prompt()
+  await deferredPrompt.userChoice
+
+  deferredPrompt = null
+  setShowInstall(false)
+}
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      if (isSignUp) {
-        if (!shopName.trim()) {
-          setError('Shop name is required');
-          return;
-        }
-        await signUp(email, password, shopName.trim());
-      } else {
-        await signIn(email, password);
+  try {
+    if (isSignUp) {
+      if (!shopName.trim()) {
+        setError('Shop name is required');
+        return;
       }
-      navigate('/');
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      setError(error.message || 'Authentication failed');
-    } finally {
-      setLoading(false);
+
+      // 🔥 ADD name & phone HERE
+      await signUp(
+        email,
+        password,
+        shopName.trim(),
+        name.trim(),
+        phone.trim()
+      );
+    } else {
+      await signIn(email, password);
     }
+
+    navigate('/');
+  } catch (error: any) {
+    console.error('Authentication error:', error);
+    setError(error.message || 'Authentication failed');
+  } finally {
+    setLoading(false);
+  }
   };
 
-  const handleGoogleSignIn = async () => {
+
+  const handleGoogleSignIn = async () => {  
     setError('');
     setLoading(true);
     try {
@@ -64,6 +103,19 @@ export default function Login() {
         <div className="text-center mb-8">
           <img src="/icons/lo.png" alt="BillWeave" className="w-30 h-20 mx-auto mb-0" />
         </div>
+        
+        {/* 🔥 PWA Install Button */}
+        {isAndroid && showInstall && (
+  <button
+    type="button"
+    onClick={handleInstall}
+    className="w-full bg-blue-600 text-white py-2 rounded-lg mt-3 hover:bg-blue-700 transition"
+  >
+    📲 Install BillWeave App
+  </button>
+        )}
+
+        
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-black mb-2">
               {isSignUp ? 'Create Account' : 'Welcome Back'}
@@ -83,80 +135,115 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Shop Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
-                    required={isSignUp}
-                    className="mobile-input-field pl-10"
-                    placeholder="Enter your shop name"
-                  />
-                </div>
-              </div>
-            )}
+  {isSignUp && (
+    <>
+      {/* User Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          User Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required={isSignUp}
+          className="mobile-input-field"
+          placeholder="Enter your name"
+        />
+      </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="mobile-input-field pl-10"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
+      {/* Mobile Number */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Mobile Number <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required={isSignUp}
+          className="mobile-input-field"
+          placeholder="mobile number, Country code +91"
+        />
+      </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="mobile-input-field pl-10 pr-10"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
+      {/* Shop Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Shop Name <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            value={shopName}
+            onChange={(e) => setShopName(e.target.value)}
+            required={isSignUp}
+            className="mobile-input-field pl-10"
+            placeholder="Enter your shop name"
+          />
+        </div>
+      </div>
+    </>
+  )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mobile-btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                </div>
-              ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
-              )}
-            </button>
+  {/* Email */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Email Address
+    </label>
+    <div className="relative">
+      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        className="mobile-input-field pl-10"
+        placeholder="Enter your email"
+      />
+    </div>
+  </div>
+
+  {/* Password */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Password
+    </label>
+    <div className="relative">
+      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <input
+        type={showPassword ? 'text' : 'password'}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        className="mobile-input-field pl-10 pr-10"
+        placeholder="Enter your password"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+    </div>
+  </div>
+
+  <button
+    type="submit"
+    disabled={loading}
+    className="mobile-btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    {loading ? (
+      <div className="flex items-center justify-center gap-2">
+        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+        {isSignUp ? 'Creating Account...' : 'Signing In...'}
+      </div>
+    ) : (
+      isSignUp ? 'Create Account' : 'Sign In'
+    )}
+  </button>
           </form>
 
           <div className="mt-6">

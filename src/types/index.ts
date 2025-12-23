@@ -52,21 +52,24 @@ export interface Bill {
 }
 
 export interface Order {
-  id: string;
+  id?: string;
   billId: string;
   billNumber: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
+
   status: 'pending' | 'in_progress' | 'completed' | 'delivered';
+
   dueDate: Date;
-  items: BillItem[];
+  items: any[];
   total: number;
   notes?: string;
-  createdBy: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 export interface InventoryItem {
   id: string;
@@ -90,6 +93,8 @@ export interface DashboardStats {
 
 export interface User {
   id: string;
+  name: string;
+  phone: string;
   email: string;
   shopName: string;
   role: 'admin' | 'user';

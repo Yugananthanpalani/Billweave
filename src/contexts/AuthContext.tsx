@@ -18,8 +18,13 @@ interface AuthContextType {
   isAdminUser: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, shopName: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    shopName: string,
+    name: string,
+    phone: string
+    ) => Promise<void>;  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -36,10 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       
       if (user?.email) {
-        try {
-          // Create user if doesn't exist
-          await createUserIfNotExists(user.email);
-          
+        try {          
           // Get app user data
           const userData = await getUserByEmail(user.email);
           setAppUser(userData);
@@ -81,21 +83,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, shopName: string) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Create user with shop name
-      await createUserIfNotExists(userCredential.user.email!, shopName);
-      
-      // Reload user data to get the updated shop name
-      if (userCredential.user.email) {
-        const userData = await getUserByEmail(userCredential.user.email);
-        setAppUser(userData);
-      }
-    } catch (error) {
-      throw error;
+  const signUp = async (
+  email: string,
+  password: string,
+  shopName: string,
+  name: string,
+  phone: string
+) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    // 🔥 PASS NAME & PHONE
+    await createUserIfNotExists(
+      userCredential.user.email!,
+      shopName,
+      name,
+      phone
+    );
+
+    if (userCredential.user.email) {
+      const userData = await getUserByEmail(userCredential.user.email);
+      setAppUser(userData);
     }
+  } catch (error) {
+    throw error;
+  }
   };
+
 
   const signInWithGoogle = async () => {
     try {

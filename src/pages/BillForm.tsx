@@ -38,6 +38,7 @@ export default function BillForm() {
       navigate('/');
     }
   }, [appUser, navigate]);
+
   
   const loadCustomers = async () => {
     if (!appUser?.id) return;
@@ -81,6 +82,16 @@ export default function BillForm() {
   const tax = (subtotal * taxPercentage) / 100;
   const total = subtotal + tax;
   const amountDue = total - amountPaid;
+  
+  useEffect(() => {
+  if (paymentStatus === 'paid') {
+    setAmountPaid(total);   // auto full paid
+  }
+
+  if (paymentStatus === 'pending') {
+    setAmountPaid(0);       // nothing paid
+  }
+}, [paymentStatus, total]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -130,22 +141,26 @@ export default function BillForm() {
 
       const billId = await addBill(billData, appUser.id);
 
-      if (createOrder) {
-        await addOrder({
-          billId,
-          billNumber,
+      if (createOrder && appUser?.id && billId && billNumber) {
+      await addOrder(
+        {
+          billId: billId,
+          billNumber: billNumber,
           customerId: selectedCustomerId,
           customerName: selectedCustomer.name,
           customerPhone: selectedCustomer.phone,
           status: 'pending',
           dueDate: new Date(dueDate),
-          items,
-          total,
-          notes,
+          items: items,
+          total: Number(total),
+          notes: notes || '',
           createdAt: new Date(),
           updatedAt: new Date(),
-        }, appUser.id);
+        },
+        appUser.id
+      );
       }
+
 
       navigate(`/bills/${billId}`);
     } catch (error) {
@@ -205,22 +220,38 @@ export default function BillForm() {
               Add Item
             </button>
           </div>
-
+              
           <div className="space-y-3">
             {items.map((item, index) => (
               <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
                 <div className="col-span-12 md:col-span-5">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Item Name
+                  Item Name
                   </label>
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => updateItem(item.id, 'name', e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Shirt Stitching"
-                  />
+                  <select
+                  value={item.name}
+                  onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                  <option value="">Select item</option>
+                  <option value="Blouse">Blouse</option>
+                  <option value="Blouse-lining">Blouse-lining</option>
+                  <option value="Blouse-design">Blouse-design</option>
+                  <option value="Saree">Saree</option>
+                  <option value="Lehenga">Lehenga</option>
+                  <option value="Churidar">Churidar</option>
+                  <option value="Kurti">Kurti</option>
+                  <option value="Salwar">Salwar</option>
+                  <option value="Dupatta">Dupatta</option>
+                  <option value="Shirt">Shirt</option>
+                  <option value="Pant">Pant</option>
+                  <option value="Coat">Coat</option>
+                  <option value="Jacket">Jacket</option>
+                  <option value="Suit">Suit</option>
+                  <option value="Other">Other</option>
+
+                  </select>
                 </div>
                 <div className="col-span-4 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
@@ -276,12 +307,12 @@ export default function BillForm() {
                 <span className="text-gray-700">GST:</span>
                 <div className="flex items-center gap-2">
                   <input
-                    type="number"
-                    value={taxPercentage}
-                    onChange={(e) => setTaxPercentage(parseFloat(e.target.value))}
-                    min="0"
-                    step="0.1"
-                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                  type="number"
+                  value={taxPercentage}
+                  onChange={(e) => setTaxPercentage(parseFloat(e.target.value) || 0)}
+                  min="0"
+                  step="0.1"
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                   <span className="text-sm">%</span>
                   <span className="font-semibold ml-2">₹{tax.toFixed(2)}</span>
@@ -317,14 +348,18 @@ export default function BillForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Amount Paid</label>
               <input
-                type="number"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                min="0"
-                max={total}
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+  type="number"
+  value={amountPaid}
+  onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+  min="0"
+  max={total}
+  step="0.01"
+  disabled={paymentStatus === 'paid'}
+  className="w-full px-3 py-2 border border-gray-300 rounded-md
+             focus:outline-none focus:ring-2 focus:ring-blue-500
+             focus:border-transparent disabled:bg-gray-100"
+/>
+
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Amount Due</label>

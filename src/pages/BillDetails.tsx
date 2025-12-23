@@ -46,7 +46,10 @@ export default function BillDetails() {
     if (bill) {
       const shopInfo = {
         shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+        name: appUser?.name || 'Owner',
+        phone: appUser?.phone || 'N/A',
         email: user?.email || 'contact@billweave.com'
+
       };
       generatePDF(bill, shopInfo, 'download');
     }
@@ -56,7 +59,10 @@ export default function BillDetails() {
     if (bill) {
       const shopInfo = {
         shopName: appUser?.shopName || 'BillWeave Tailor Shop',
+        name: appUser?.name || 'Owner',
+        phone: appUser?.phone || 'N/A',
         email: user?.email || 'contact@billweave.com'
+
       };
       generatePDF(bill, shopInfo, 'print');
     }
@@ -174,7 +180,7 @@ ${bill.amountDue > 0 ? `⚠️ Amount Due: ₹${bill.amountDue.toFixed(2)}` : '�
 
 Payment Status: ${bill.paymentStatus.toUpperCase()}
 
-Thank you for choosing BillWeave Tailors!`;
+Thank you for choosing ${appUser?.shopName || 'BillWeave Tailors'}!`;
 
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://wa.me/${bill.customerPhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;

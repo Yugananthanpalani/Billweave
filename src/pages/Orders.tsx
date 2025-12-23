@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, Filter, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Search, Calendar, ShoppingBag, MessageCircle } from 'lucide-react';
 import { getAllOrders, updateOrder } from '../lib/firestore';
 import { Order } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -239,20 +239,29 @@ Thank you for choosing ${shopInfo.shopName}!`;
 
                 {/* Status Update */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                  <label className="text-sm font-medium text-gray-700">Update Status:</label>
+                  <label className="text-sm font-medium text-gray-700">
+    Update Status:
+                  </label>
+
                   <select
-                    value={order.status}
-                    onChange={(e) =>
-                      handleStatusChange(order.id, e.target.value as Order['status'])
-                    }
-                    className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      value={order.status}
+                      onChange={(e) =>
+                      handleStatusChange(
+                      order.id!,                     // 👈 id always present here
+                      e.target.value as Order['status']
+                    )}
+
+                  className="px-3 py-2 border border-gray-300 rounded-xl text-sm
+                  focus:outline-none focus:ring-2 focus:ring-blue-500
+                  focus:border-transparent bg-white"
                   >
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="delivered">Delivered</option>
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="delivered">Delivered</option>
                   </select>
                 </div>
+
                 
                 {/* Action Buttons */}
                 <div className="flex justify-end">

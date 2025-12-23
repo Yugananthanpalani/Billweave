@@ -541,15 +541,32 @@ export const isAdmin = (email: string): boolean => {
   return email === 'admin@billweave.com';
 };
 
-export const createUserIfNotExists = async (email: string, shopName?: string) => {
+export const createUserIfNotExists = async (
+  email: string,
+  shopName?: string,
+  name?: string,
+  phone?: string
+) => {
   const existingUser = await getUserByEmail(email);
+
   if (!existingUser) {
+    // 🆕 New user
     await addUser({
       email,
+      name: name || '',
+      phone: phone || '',
       shopName: shopName || (isAdmin(email) ? 'Admin Panel' : 'My Tailor Shop'),
       role: isAdmin(email) ? 'admin' : 'user',
       isBlocked: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  } else {
+    // 🔥 Existing user → UPDATE values
+    await updateUser(existingUser.id, {
+      name: name || existingUser.name || '',
+      phone: phone || existingUser.phone || '',
+      shopName: shopName || existingUser.shopName,
       updatedAt: new Date(),
     });
   }
