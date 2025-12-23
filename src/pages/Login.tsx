@@ -3,9 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+let deferredPrompt: any = null
+
 export default function Login() {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
+  const isAndroid = /Android/i.test(navigator.userAgent)
+  const [showInstall, setShowInstall] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -15,6 +19,21 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+  const handler = (e: any) => {
+    e.preventDefault()          // 🔥 IMPORTANT
+    deferredPrompt = e          // save event
+    setShowInstall(true)        // show install button
+  }
+
+  window.addEventListener('beforeinstallprompt', handler)
+
+  return () => {
+    window.removeEventListener('beforeinstallprompt', handler)
+  }
+}, [])
+
   
   const handleSubmit = async (e: FormEvent) => {
   e.preventDefault();
@@ -64,18 +83,40 @@ export default function Login() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        
+  const handleInstall = async () => {
+  if (!deferredPrompt) return
+  deferredPrompt.prompt()
+  await deferredPrompt.userChoice
+  deferredPrompt = null
+  setShowInstall(false)
+}
 
-        {/* Form */}
-        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
-          {/* Logo */}
+return (
+  <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="w-full max-w-md">
+
+      {/* 🔥 INSTALL BUTTON – ANDROID ONLY */}
+      {isAndroid && showInstall && (
+        <button
+          type="button"
+          onClick={handleInstall}
+          className="w-full bg-blue-600 text-white py-2 rounded-lg mb-4 hover:bg-blue-700 transition"
+        >
+          📲 Install App
+        </button>
+      )}
+
+      {/* Form Card */}
+      <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
+
+        {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/icons/lo.png" alt="BillWeave" className="w-30 h-20 mx-auto mb-0" />
+          <img
+            src="/icons/lo.png"
+            alt="BillWeave"
+            className="w-30 h-20 mx-auto mb-0"
+          />
         </div>
-        
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-black mb-2">
               {isSignUp ? 'Create Account' : 'Welcome Back'}
