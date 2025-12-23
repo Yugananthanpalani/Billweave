@@ -106,13 +106,13 @@ return (
       {/* 🔥 Floating PWA Install Toast */}
 {isAndroid && showInstall && (
   <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
-    <div className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl shadow-2xl">
+    <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-md text-white rounded-xl shadow-2xl border border-white/20">
       <span className="text-sm font-medium flex-1 cursor-pointer" onClick={handleInstall}>
         Install BillWeave
       </span>
       <button
         onClick={() => setShowInstall(false)}
-        className="text-white hover:bg-blue-700 p-1 rounded transition-colors"
+        className="text-white hover:bg-white/20 p-1 rounded transition-colors"
       >
         <X className="w-4 h-4" />
       </button>
