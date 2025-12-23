@@ -75,22 +75,6 @@ export default function Login() {
     setLoading(false);
   }
   };
-
-
-  const handleGoogleSignIn = async () => {  
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithGoogle();
-      navigate('/');
-    } catch (error: any) {
-      console.error('Google sign-in error:', error);
-      setError(error.message || 'Google sign-in failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleInstall = async () => {
   if (!deferredPrompt) return
   deferredPrompt.prompt()
