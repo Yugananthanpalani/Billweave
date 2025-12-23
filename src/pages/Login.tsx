@@ -3,12 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-let deferredPrompt: any = null
-
 export default function Login() {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
-  const isAndroid = /Android/i.test(navigator.userAgent)
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -18,32 +15,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showInstall, setShowInstall] = useState(false)
-
-  useEffect(() => {
-  const handler = (e: any) => {
-    e.preventDefault()
-    deferredPrompt = e
-    setShowInstall(true)
-  }
-
-  window.addEventListener('beforeinstallprompt', handler)
-
-  return () => {
-    window.removeEventListener('beforeinstallprompt', handler)
-  }
-}, [])
-
-const handleInstall = async () => {
-  if (!deferredPrompt) return
-
-  deferredPrompt.prompt()
-  await deferredPrompt.userChoice
-
-  deferredPrompt = null
-  setShowInstall(false)
-}
-
+  
   const handleSubmit = async (e: FormEvent) => {
   e.preventDefault();
   setError('');
@@ -103,18 +75,6 @@ const handleInstall = async () => {
         <div className="text-center mb-8">
           <img src="/icons/lo.png" alt="BillWeave" className="w-30 h-20 mx-auto mb-0" />
         </div>
-        
-        {/* 🔥 PWA Install Button */}
-        {isAndroid && showInstall && (
-  <button
-    type="button"
-    onClick={handleInstall}
-    className="w-full bg-blue-600 text-white py-2 rounded-lg mt-3 hover:bg-blue-700 transition"
-  >
-    📲 Install BillWeave App
-  </button>
-        )}
-
         
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-black mb-2">
