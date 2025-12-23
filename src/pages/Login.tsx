@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Store, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 let deferredPrompt: any = null
@@ -28,10 +28,10 @@ export default function Login() {
     // show floating notification
     setShowInstall(true)
 
-    // auto hide after 2 seconds
+    // auto hide after 5 seconds
     setTimeout(() => {
       setShowInstall(false)
-    }, 2000)
+    }, 5000)
   }
 
   window.addEventListener('beforeinstallprompt', handler)
@@ -105,17 +105,17 @@ return (
 
       {/* 🔥 Floating PWA Install Toast */}
 {isAndroid && showInstall && (
-  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-    <div
-      onClick={handleInstall}
-      className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white
-                 rounded-xl shadow-2xl cursor-pointer
-                 animate-slide-up"
-    >
-      <span className="text-sm font-medium">
+  <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+    <div className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl shadow-2xl">
+      <span className="text-sm font-medium flex-1 cursor-pointer" onClick={handleInstall}>
         Install BillWeave
       </span>
-      <span className="text-xs opacity-80">Tap</span>
+      <button
+        onClick={() => setShowInstall(false)}
+        className="text-white hover:bg-blue-700 p-1 rounded transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
     </div>
   </div>
 )}
