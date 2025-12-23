@@ -22,9 +22,16 @@ export default function Login() {
 
   useEffect(() => {
   const handler = (e: any) => {
-    e.preventDefault()          // 🔥 IMPORTANT
-    deferredPrompt = e          // save event
-    setShowInstall(true)        // show install button
+    e.preventDefault()
+    deferredPrompt = e
+
+    // show floating notification
+    setShowInstall(true)
+
+    // auto hide after 2 seconds
+    setTimeout(() => {
+      setShowInstall(false)
+    }, 2000)
   }
 
   window.addEventListener('beforeinstallprompt', handler)
@@ -33,6 +40,7 @@ export default function Login() {
     window.removeEventListener('beforeinstallprompt', handler)
   }
 }, [])
+
 
   
   const handleSubmit = async (e: FormEvent) => {
@@ -95,16 +103,23 @@ return (
   <div className="min-h-screen bg-white flex items-center justify-center p-4">
     <div className="w-full max-w-md">
 
-      {/* 🔥 INSTALL BUTTON – ANDROID ONLY */}
-      {isAndroid && showInstall && (
-        <button
-          type="button"
-          onClick={handleInstall}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg mb-4 hover:bg-blue-700 transition"
-        >
-          📲 Install App
-        </button>
-      )}
+      {/* 🔥 Floating PWA Install Toast */}
+{isAndroid && showInstall && (
+  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+    <div
+      onClick={handleInstall}
+      className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white
+                 rounded-xl shadow-2xl cursor-pointer
+                 animate-slide-up"
+    >
+      <span className="text-sm font-medium">
+        Install BillWeave
+      </span>
+      <span className="text-xs opacity-80">Tap</span>
+    </div>
+  </div>
+)}
+
 
       {/* Form Card */}
       <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
