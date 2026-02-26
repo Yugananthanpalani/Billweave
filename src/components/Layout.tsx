@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -24,14 +24,25 @@ export default function Layout({ children }: LayoutProps) {
   const { signOut, user, isAdminUser } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const mainContentRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const el = mainContentRef.current;
+    const target: HTMLElement | Window = el ?? window;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const scrollTop = el ? el.scrollTop : window.scrollY;
+      setIsScrolled(scrollTop > 10);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    // @ts-expect-error - Window vs HTMLElement event target
+    target.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      // @ts-expect-error - Window vs HTMLElement event target
+      target.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Close mobile menu when route changes
@@ -74,10 +85,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div
-      className="mobile-app-container prevent-refresh"
-      style={{ pointerEvents: 'auto', overscrollBehavior: 'none' }}
-    >
+    <div className="mobile-app-container">
       {/* Desktop Header */}
       <nav
         className={`hidden md:block sticky top-0 z-50 transition-all duration-300 ${
@@ -183,6 +191,7 @@ export default function Layout({ children }: LayoutProps) {
       <main
         className="mobile-main-content prevent-refresh"
         style={{ pointerEvents: 'auto', overscrollBehavior: 'none' }}
+        ref={mainContentRef}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           <div className="animate-fade-in">{children}</div>

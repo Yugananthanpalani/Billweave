@@ -14,8 +14,8 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background: #ffffff;
     color: #000000;
@@ -24,8 +24,6 @@
   * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
   }
   
   /* Allow text selection and touch for interactive elements */
@@ -55,14 +53,13 @@
 
 @layer components {
   .mobile-app-container {
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow-x: hidden;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -84,11 +81,9 @@
     flex: 1;
     padding-top: calc(60px + env(safe-area-inset-top));
     padding-bottom: calc(70px + env(safe-area-inset-bottom));
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 0;
     overflow-x: hidden;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -471,22 +466,18 @@
 /* Mobile-specific optimizations */
 @media (max-width: 768px) {
   html {
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
   
   body {
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
   #root {
-    height: 100%;
+    min-height: 100%;
     overflow-y: auto;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -680,4 +671,8 @@
     padding-right: env(safe-area-inset-right);
   }
   
+}
+html, body {
+  overflow-y: auto !important;
+  overscroll-behavior: auto !important;
 }
